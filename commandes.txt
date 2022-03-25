@@ -1,8 +1,0 @@
-python3 -m venv venv
-.\venv\Scripts\activate
-pip install flask
-
-
-$env:FLASK_APP = "fichier.py"
-$env:FLASK_DEBUG = 0
-flask run
