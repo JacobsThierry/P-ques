@@ -317,3 +317,28 @@ def logout():
     for key in list(session.keys()):
         session.pop(key)
     return redirect('/')
+
+import json
+
+@app.route('/commandes')
+@bar_required
+def commandes():
+    l = []
+    coms = db_session.query(commandeChocolat).filter_by(servit=False)
+    for cc in coms:
+        d = {}
+        d["id_commande"] = cc.commande_id
+        choc = {}
+        choc["id"] = cc.chocolat_id
+        choc["name"] = cc.chocolat
+        d["chocolat"] = choc
+        ut = {}
+        ut["email"] = cc.mail
+        ut["nom"] = cc.nom
+        ut["prenom"] = cc.prenom
+        d["utilisateur"] = ut
+        l.append(d)
+    return json.dumps(l)
+    
+        
+    

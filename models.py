@@ -79,12 +79,32 @@ class commandeChocolat(Base, AllFeaturesMixin):
             return None
     
     @hybrid_property
+    def chocolat(self):
+        
+        u = db.session.query(Chocolat).filter_by(chocolat_id=self.chocolat_id).first()
+        
+        if u is not None:
+            return u.chocolat_name
+        else:
+            return None
+    
+    @hybrid_property
     def prenom(self):
         
         u = db.session.query(User).filter_by(openid=self.user_id).first()
         
         if u is not None:
             return u.prenom
+        else:
+            return None
+        
+    @hybrid_property
+    def mail(self):
+        
+        u = db.session.query(User).filter_by(openid=self.user_id).first()
+        
+        if u is not None:
+            return u.email
         else:
             return None
         
