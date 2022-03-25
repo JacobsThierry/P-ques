@@ -377,7 +377,7 @@ def validerCommande(commandeId):
     if(c is None):
         return redirect('/')
     else:
-        if(c.servit = False):
+        if(c.servit == False):
             c.date_servit = datetime.now()
             c.servit = True
             db_session.commit()
