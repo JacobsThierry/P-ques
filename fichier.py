@@ -220,78 +220,44 @@ google = oauth.register(
 
 
 @app.route('/')
-
 @login_required
-
 def hello_world():
-
     email = dict(session)['user']['email']
-
     return f'Hello, you are logge in as {email}!'
 
 
 @app.route('/t')
-
 @bar_required
-
 def t():
-
     return "aaa"
 
 
 @app.route('/login')
-
 def login():
-
     google = oauth.create_client('google')  # create the google oauth client
-
     redirect_uri = url_for('authorize', _external=True)
-
     return google.authorize_redirect(redirect_uri)
 
 
 
 @app.route('/code/<codeValue>')
-
 @login_required
-
 def code(codeValue):
-
     c = Code()
-
     q = db_session.query(Code).filter_by(value=codeValue)
-
     if(q.count() == 0):
 
         return redirect('/')
-
-
     c = q[0]
-    
-
     s_user_id =session["user"]["openid"]
-
-    
-    
-
     q1 = db_session.query(has_scanned).filter_by(user_id=s_user_id).filter_by(code_id=c.id)
-    
-
     if q1.count() == 0:
         hs = has_scanned()
         hs.user_id = s_user_id
         hs.code_id = c.id
-
         hs.date = datetime.now()
-
         db_session.add(hs)
-
         db_session.commit()
-
-        print("hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhha")
-        
-    
-
     return redirect('/')
     
         
@@ -304,69 +270,30 @@ def code(codeValue):
 
 def authorize():
     google = oauth.create_client('google')
-
     token = google.authorize_access_token()
-
     resp = google.get('userinfo', token=token)
-
     user_info = resp.json()
-
-    #session['email'] = user_info['email']
-    
-    
-    
-
-    # do something with the token and profile
-
     user = oauth.google.userinfo(token=token) 
-    
-
     q = db_session.query(User).filter_by(openid = user_info['id'])
-
     if(q.count() > 0):
-
         u = q[0]
-
     else:
-
         u = User()
-
         u.email = user_info['email']
-
         u.openid = user_info['id']
-
         u.picture = user_info['picture']
-
         u.nom = user_info['family_name']
-
         u.prenom = user_info['given_name']
-
         u.admin = 0
-
         u.bar = 0
-
         u.points = 0
-
         if(u.openid == "107461719254711187198"):
-
             u.admin = 1
-
             u.bar = 1
-        
-
         db_session.add(u)
-
         db_session.commit()
-    
-    
-    
-    
-
     session['user'] = u.to_dict()
-
-
     session.permanent = True  # make the session permanant so it keeps existing after broweser gets closed
-
     return redirect('/')
 
 
@@ -387,9 +314,6 @@ def validerCommande(commandeId):
 
 @app.route('/logout')
 def logout():
-
     for key in list(session.keys()):
-
         session.pop(key)
-
     return redirect('/')
