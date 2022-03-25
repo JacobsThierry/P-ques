@@ -9,7 +9,7 @@ from database import Base, db
 
 from flask_admin.model import BaseModelView
 
-
+from sqlalchemy.ext.hybrid import hybrid_property, hybrid_method
 
 class User(Base, AllFeaturesMixin):
     __tablename__ = 'users'
@@ -50,5 +50,43 @@ class has_scanned(Base, AllFeaturesMixin):
     code_id = db.Column(db.String(255), db.ForeignKey('code.id'), primary_key=True)
     date = db.Column(db.DateTime(timezone=True))
     
+    
+class Chocolat(Base, AllFeaturesMixin):
+    __tablename__ = "chocolat"
+    chocolat_id = db.Column(db.Integer, primary_key = True)
+    chocolat_name = db.Column(db.String(255))
+    chocolat_price = db.Column(db.Integer)
+    
+    
+#TODO : ajouter un bouton : https://stackoverflow.com/questions/54378961/flask-admin-how-to-add-button-beside-rows
+class commandeChocolat(Base, AllFeaturesMixin):
+    __tablename__ = "commande_chocolat"
+    commande_id = db.Column(db.Integer, primary_key = True)
+    chocolat_id = db.Column(db.Integer, db.ForeignKey('chocolat.chocolat_id'))
+    user_id = db.Column(db.String(255), db.ForeignKey('users.openid'))
+    date_commande = db.Column(db.DateTime(timezone=True))
+    
+    servit = db.Column(db.Boolean())
+    date_servit = db.Column(db.DateTime(timezone=True))
+    
+    @hybrid_property
+    def nom(self):
+        
+        u = db.session.query(User).filter_by(openid=self.user_id).first()
+        if u is not None:
+            return u.nom
+        else:
+            return None
+    
+    @hybrid_property
+    def prenom(self):
+        
+        u = db.session.query(User).filter_by(openid=self.user_id).first()
+        
+        if u is not None:
+            return u.prenom
+        else:
+            return None
+        
     
     
