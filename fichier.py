@@ -328,7 +328,7 @@ def commandes():
     for cc in coms:
         d = {}
         d["id_commande"] = cc.commande_id
-        d["date_commande"] = cc.date_commande
+        d["date_commande"] = str(cc.date_commande)
         choc = {}
         choc["id"] = cc.chocolat_id
         choc["name"] = cc.chocolat
