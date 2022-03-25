@@ -370,9 +370,22 @@ def authorize():
     return redirect('/')
 
 
+@app.route('/validerCommande/<int:commandeId>')
+@bar_required
+def validerCommande(commandeId):
+    c = db_session.query(commandeChocolat).filter_by(commande_id=commandeId).first()
+    if(c is None):
+        return redirect('/')
+    else:
+        if(c.servit = False):
+            c.date_servit = datetime.now()
+            c.servit = True
+            db_session.commit()
+        return redirect('/')
+    
+
 
 @app.route('/logout')
-
 def logout():
 
     for key in list(session.keys()):
