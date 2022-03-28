@@ -281,10 +281,7 @@ def newCommande(choo):
     c = db_session.query(Chocolat).filter_by(chocolat_id=choo).first()
     
     if c is None:
-        return redirect("/")
-    
-    
-    
+        return redirect("/") #Todo : rediriger vers un écran de confirmation
     u = db_session.query(User).filter_by(openid=s_user_id).first()
     if(u.points < c.chocolat_price):
         return redirect("/")
@@ -304,7 +301,6 @@ def newCommande(choo):
     
     
     return redirect("/")
-
 
 
 @app.route('/authorize')
