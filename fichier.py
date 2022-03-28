@@ -112,11 +112,6 @@ def hello_world():
     email = dict(session)['user']['email']
     return f'Hello, you are logge in as {email}!'
 
-@app.route('/t')
-@bar_required
-def t():
-    return "aaa"
-
 @app.route('/login')
 def login():
     google = oauth.create_client('google')  # create the google oauth client
