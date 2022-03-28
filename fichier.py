@@ -121,11 +121,10 @@ def login():
 @app.route('/code/<codeValue>')
 @login_required
 def code(codeValue):
-    c = Code()
-    q = db_session.query(Code).filter_by(value=codeValue)
-    if(q.count() == 0):
+    c = db_session.query(Code).filter_by(value=codeValue).first()
+    if not c:
         return redirect('/')
-    c = q[0]
+    
     s_user_id =session["user"]["openid"]
     q1 = db_session.query(has_scanned).filter_by(user_id=s_user_id).filter_by(code_id=c.id)
     if q1.count() == 0:
@@ -134,6 +133,13 @@ def code(codeValue):
         hs.code_id = c.id
         hs.date = datetime.now()
         db_session.add(hs)
+        
+        u = db_session.query(User).filter_by(openid=s_user_id).first()
+        u.points += c.points
+        
+        print(u.points)
+        print(c.value)
+        
         db_session.commit()
     return redirect('/')
     
