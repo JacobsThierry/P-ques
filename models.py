@@ -57,8 +57,7 @@ class Chocolat(Base, AllFeaturesMixin):
     chocolat_name = db.Column(db.String(255))
     chocolat_price = db.Column(db.Integer)
     
-    
-#TODO : ajouter un bouton : https://stackoverflow.com/questions/54378961/flask-admin-how-to-add-button-beside-rows
+
 class commandeChocolat(Base, AllFeaturesMixin):
     __tablename__ = "commande_chocolat"
     commande_id = db.Column(db.Integer, primary_key = True)

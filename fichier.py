@@ -260,14 +260,54 @@ def code(codeValue):
         db_session.commit()
     return redirect('/')
     
+
+
+@app.route('/myCommande') 
+@login_required
+def myCommande():
+    s_user_id =session["user"]["openid"]
+    l = []
+    c = db_session.query(commandeChocolat).filter_by(user_id=s_user_id)
+    for cc in c:
+        l.append(c)
+    return redirect("/") #TODO : faire une liste des commandes
         
     
+@app.route('/commande/<int:choo>') 
+@login_required
+def newCommande(choo):
+    s_user_id =session["user"]["openid"]
     
+    c = db_session.query(Chocolat).filter_by(chocolat_id=choo).first()
+    
+    if c is None:
+        return redirect("/")
+    
+    
+    
+    u = db_session.query(User).filter_by(openid=s_user_id).first()
+    if(u.points < c.chocolat_price):
+        return redirect("/")
+    
+    cc = commandeChocolat()
+    cc.chocolat_id = choo
+    cc.user_id = s_user_id
+    cc.date_commande = datetime.now()
+    cc.servit = False
+    cc.date_servit = None
+    
+    u.points -= c.chocolat_price
+    
+    db_session.add(cc)
+    
+    db_session.commit()
+    
+    
+    return redirect("/")
 
 
 
 @app.route('/authorize')
-
 def authorize():
     google = oauth.create_client('google')
     token = google.authorize_access_token()
