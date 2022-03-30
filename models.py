@@ -13,7 +13,7 @@ class User(Base, AllFeaturesMixin):
     picture = db.Column(db.String(255))
     nom = db.Column(db.String(255))
     prenom = db.Column(db.String(255))
-    points = db.Column(db.Float)
+    points = db.Column(db.Integer)
     admin = db.Column(db.Boolean())
     bar = db.Column(db.Boolean())
     serialize_only = ('openid', 'email', 'picture', 'nom', 'prenom', 'admin', 'bar')
@@ -29,7 +29,7 @@ class User(Base, AllFeaturesMixin):
     
 class Code(Base, AllFeaturesMixin):
     __tablename__ = "code"
-    id = db.Column(db.Integer, primary_key = True)
+    id = db.Column(db.String(255), primary_key = True)
     value = db.Column(db.String(255), unique=True)
     points = db.Column(db.Float)
 
@@ -45,7 +45,6 @@ class Chocolat(Base, AllFeaturesMixin):
     __tablename__ = "chocolat"
     chocolat_id = db.Column(db.Integer, primary_key = True)
     chocolat_name = db.Column(db.String(255))
-    chocolat_desc  = db.Column(db.String(1024))
     chocolat_price = db.Column(db.Integer)
     
 
