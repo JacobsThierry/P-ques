@@ -7,7 +7,7 @@ from datetime import timedelta
 from datetime import date
 from datetime import datetime
 # decorator for routes that should be accessible only by logged in users
-from auth_decorator import login_required, bar_required
+from auth_decorator import login_required, bar_required, admin_required
 from flask_admin import Admin
 from flask_admin import BaseView, expose, AdminIndexView
 from flask_admin.form import SecureForm
@@ -21,6 +21,8 @@ load_dotenv()
 
 # App config
 app = Flask(__name__)
+
+url = "paques2022.telecomnancy.net"
 
 # Session config
 app.secret_key = os.getenv("APP_SECRET_KEY")
@@ -61,6 +63,7 @@ class myBaseView(AdminIndexView):
 
 class BaseModelView(ModelView):
     column_display_pk = True
+    page_size = 500
     def is_accessible(self):
         return is_accessible_admin()
 
@@ -118,7 +121,19 @@ def login():
     redirect_uri = url_for('authorize', _external=True)
     return google.authorize_redirect(redirect_uri)
 
+
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+
+limiter = Limiter(
+    app,
+    key_func=get_remote_address,
+    default_limits=["2000 per day", "200 per hour"]
+)
+
+
 @app.route('/code/<codeValue>')
+@limiter.limit("5 per minute")
 @login_required
 def code(codeValue):
     c = db_session.query(Code).filter_by(value=codeValue).first()
@@ -252,3 +267,91 @@ def commandes():
     return json.dumps(l)
     
         
+import qrcode
+from PIL import Image, ImageDraw, ImageFont
+import math
+import cv2
+from zipfile import ZipFile
+import os
+from os.path import basename
+from flask import send_file
+
+from os import listdir
+from os.path import isfile, join
+
+@app.route('/qrCodes')
+@admin_required
+def getGRCode():
+           
+    
+    codes = db_session.query(Code)
+    
+    for code in codes:
+        make_qr_code(code.value)
+        
+    
+    zipObj = ZipFile('sampleDir.zip', 'w') 
+    
+    mypath = "out"
+    onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]
+    
+    for f in onlyfiles:
+        zipObj.write("out//" + f)
+    
+    zipObj.close()
+    
+    return send_file("sampleDir.zip", as_attachment=True)
+
+
+
+compteur_qr = 0
+
+def make_qr_code(data):
+    logo_display = Image.open('cul.png')
+    
+    data = url + "/" + data
+    
+    bg = Image.open('background.jpg')
+    bg = bg.crop((0,0,900,900))
+    
+    
+    logo_display.thumbnail((60, 60))
+    
+    qr = qrcode.QRCode(
+        error_correction=qrcode.ERROR_CORRECT_H,
+        border=0 ,
+        box_size=16
+    )
+    qr.add_data(data)
+    qr.make(fit=True)
+    
+    img = qr.make_image(fill_color="black", back_color="white").convert('RGB')
+    
+    logo_pos = ((img.size[0] - logo_display.size[0]) // 2, (img.size[1] - logo_display.size[1]) // 2)
+    
+    
+    img.paste(logo_display, logo_pos)
+    logo_pos = ((bg.size[0] - img.size[0]) // 2, ((bg.size[1] - img.size[1]) // 2) - 50)
+    bg.paste(img,logo_pos)
+    
+    
+    
+    box_shape = ((112,760), (786,862) )
+    
+    bgdraw = ImageDraw.Draw(bg)  
+    bgdraw.rectangle(box_shape, fill ="#FFFFFF", outline ="#000000")
+    
+    fnt = ImageFont.truetype("arial.ttf", 26)
+    
+    w, h = bgdraw.textsize(data, fnt)
+    
+    W, H = bg.size
+    
+     
+    
+    bgdraw.text(((W-w)/2,790), data, font=fnt, fill=(0, 0, 0, 255))
+    global compteur_qr
+    compteur_qr +=1
+    
+    bg.save("out/" + str(compteur_qr) + ".png")
+    

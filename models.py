@@ -31,7 +31,7 @@ class Code(Base, AllFeaturesMixin):
     __tablename__ = "code"
     id = db.Column(db.Integer, primary_key = True)
     value = db.Column(db.String(255), unique=True)
-    points = db.Column(db.Integer)
+    points = db.Column(db.Float)
 
 
 class has_scanned(Base, AllFeaturesMixin):
