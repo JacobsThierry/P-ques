@@ -50,6 +50,8 @@ class Chocolat(Base, AllFeaturesMixin):
     chocolat_nom_bar = db.Column(db.String(255))
     chocolat_price = db.Column(db.Integer)
     chocolat_stoque = db.Column(db.Integer)
+    min_qte = db.Column(db.Integer)
+    chocolat_image = db.Column(db.String(255))
     
 
 class commandeChocolat(Base, AllFeaturesMixin):
@@ -59,6 +61,7 @@ class commandeChocolat(Base, AllFeaturesMixin):
     user_id = db.Column(db.String(255), db.ForeignKey('users.openid'))
     date_commande = db.Column(db.DateTime(timezone=True))
     servit = db.Column(db.Boolean())
+    quantite = db.Column(db.Integer)
     date_servit = db.Column(db.DateTime(timezone=True))
     
     @hybrid_property

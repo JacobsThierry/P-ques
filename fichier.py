@@ -170,8 +170,21 @@ def code(codeValue):
         
         u = db_session.query(User).filter_by(openid=session["user"]["openid"]).first()
         if(u is not None):
-            u.total_points += 1
-            u.points += 1
+            
+            value = c.points
+            
+            qte_scan = db_session.query(has_scanned).filter_by(code_id=codeValue).count()
+            
+            if(qte_scan > 50):
+                value = value*1/4
+            elif(qte_scan > 30):
+                value = value*1/2
+            elif(qte_scan > 15):
+                value = value * 3/4
+            
+            value = math.floor(value)
+            u.total_points += value
+            u.points += value
         
         db_session.add(hs)
         db_session.commit()
@@ -189,15 +202,22 @@ def myCommande():
     return redirect("/") #TODO : faire une liste des commandes
         
     
-@app.route('/commande/<int:choo>') 
+@app.route('/commande/<int:choo>/<int:qte>') 
 @login_required
-def newCommande(choo):
+def newCommande(choo, qte):
     s_user_id =session["user"]["openid"]
     c = db_session.query(Chocolat).filter_by(chocolat_id=choo).first()    
     if c is None:
         return redirect("/") #Todo : rediriger vers un écran de confirmation
+    if(c.chocolat_stoque < 1):
+        return redirect("/") #Todo : rediriger vers un écran de confirmation
+        
     u = db_session.query(User).filter_by(openid=s_user_id).first()
-    if(u.points < c.chocolat_price):
+    
+    if(qte < c.min_qte):
+        return redirect("/")
+    
+    if(u.points < c.chocolat_price * qte):
         return redirect("/")
     cc = commandeChocolat()
     cc.chocolat_id = choo
@@ -205,6 +225,7 @@ def newCommande(choo):
     cc.date_commande = datetime.now()
     cc.servit = False
     cc.date_servit = None
+    cc.quantite = qte
     u.points -= c.chocolat_price
     c.chocolat_stoque -= 1
     db_session.add(cc)
@@ -279,6 +300,7 @@ def commandes():
         d = {}
         d["id_commande"] = cc.commande_id
         d["date_commande"] = str(cc.date_commande)
+        d["quantité"] = cc.quantite
         choc = {}
         choc["id"] = cc.chocolat_id
         choc["name"] = cc.chocolat
