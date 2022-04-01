@@ -27,7 +27,7 @@ def bar_required(f):
         # the other data for that user/check if they exist
         if not user:
             return redirect("/")
-        if(user["bar"]):
+        if(user["bar"] == 1):
             return f(*args, **kwargs)
         return redirect("/")
     return decorated_function
@@ -42,7 +42,7 @@ def admin_required(f):
         # the other data for that user/check if they exist
         if not user:
             return redirect("/")
-        if(user["admin"]):
+        if(user["admin"] == 1):
             return f(*args, **kwargs)
         return redirect("/")
     return decorated_function

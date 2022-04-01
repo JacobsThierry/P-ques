@@ -154,7 +154,7 @@ limiter = Limiter(
 @app.route('/code/<codeValue>')
 @limiter.limit("20 per minute")
 @login_required
-def code(codeValue):
+def code(codeValue):    
     c = Code()
     q = db_session.query(Code).filter_by(value=codeValue)
     if(q.count() == 0):
@@ -205,8 +205,6 @@ def myCommande():
 @app.route('/commande/<int:choo>/<int:qte>') 
 @login_required
 def newCommande(choo, qte):
-    
-    
     if(qte < 0):
         return redirect("/")
     
@@ -355,12 +353,9 @@ compteur_qr = 0
 
 def make_qr_code(data):
     logo_display = Image.open('cul.png')
-    
     data = url + "/" + data
-    
     bg = Image.open('background.jpg')
     bg = bg.crop((0,0,900,900))
-    
     
     logo_display.thumbnail((60, 60))
     
