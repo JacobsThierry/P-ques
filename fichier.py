@@ -1,5 +1,8 @@
 # AS simeple as possbile flask google oAuth 2.0
 
+from flask_limiter.util import get_remote_address
+from flask_limiter import Limiter
+
 from flask import Flask, redirect, url_for, session
 from authlib.integrations.flask_client import OAuth
 import os
@@ -25,19 +28,17 @@ from flask import send_file
 from os import listdir
 from os.path import isfile, join
 
-#folders setup
+# folders setup
 
 mypath = "dbdir"
 isExist = os.path.exists(mypath)
 if not isExist:
-        os.makedirs(mypath)
-
+    os.makedirs(mypath)
 
 
 # dotenv setup
 
 from dotenv import load_dotenv
-
 load_dotenv()
 
 # App config
@@ -50,66 +51,107 @@ app.secret_key = os.getenv("APP_SECRET_KEY")
 app.config['SESSION_COOKIE_NAME'] = 'google-login-session'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=5)
 
+
+
+
 # oAuth Setup
 oauth = OAuth(app)
 
-#database
-from database import db
+
 from database import db_session
+from database import db
 from models import *
+
+# database
 db.create_all()
 
 
 def is_accessible_admin():
-        if("user" in session and session["user"] is not None):
-            u = db_session.query(User).filter_by(openid=session["user"]["openid"]).first()
-            if(u is not None):
-                return u.openid == "107461719254711187198" or u.admin == 1
-        return False
+    if("user" in session and session["user"] is not None):
+        u = db_session.query(User).filter_by(
+            openid=session["user"]["openid"]).first()
+        if(u is not None):
+            return u.openid == "107461719254711187198" or u.admin == 1
+    return False
+
 
 def is_accessible_bar():
-        if("user" in session and session["user"] is not None):
-            u = db_session.query(User).filter_by(openid=session["user"]["openid"]).first()            
-            if(u is not None):
-                return u.openid == "107461719254711187198" or u.admin == 1
-        return False
+    if("user" in session and session["user"] is not None):
+        u = db_session.query(User).filter_by(
+            openid=session["user"]["openid"]).first()
+        if(u is not None):
+            return u.openid == "107461719254711187198" or u.admin == 1
+    return False
+
 
 class myBaseView(AdminIndexView):
-    def is_accessible(self):
-        return is_accessible_admin()
-    
-    def inaccessible_callback(self, name, **kwargs):
-            return redirect("/")
-
-
-class BaseModelView(ModelView):
-    column_display_pk = True
-    page_size = 500
     def is_accessible(self):
         return is_accessible_admin()
 
     def inaccessible_callback(self, name, **kwargs):
         return redirect("/")
 
+
+class BaseModelView(ModelView):
+    column_display_pk = True
+    page_size = 500
+
+    def is_accessible(self):
+        return is_accessible_admin()
+
+    def inaccessible_callback(self, name, **kwargs):
+        return redirect("/")
+
+
 class hasScannedModel(BaseModelView):
-    column_list = (has_scanned.user_id, has_scanned.code_id, has_scanned.date )
+    column_list = (has_scanned.user_id, has_scanned.code_id, has_scanned.date)
+
+
 class commandeChocolatModel(BaseModelView):
-    column_list = column_list = (commandeChocolat.commande_id, commandeChocolat.chocolat_id, commandeChocolat.user_id, commandeChocolat.date_commande, commandeChocolat.servit, commandeChocolat.date_servit, commandeChocolat.nom, commandeChocolat.prenom)
+    column_list = column_list = (
+        commandeChocolat.commande_id,
+        commandeChocolat.chocolat_id,
+        commandeChocolat.user_id,
+        commandeChocolat.date_commande,
+        commandeChocolat.servit,
+        commandeChocolat.date_servit,
+        commandeChocolat.nom,
+        commandeChocolat.prenom)
+
+
 class barBaseView(AdminIndexView):
-        def is_accessible(self):
-            return is_accessible_bar()
-        def inaccessible_callback(self, name, **kwargs):
-            return redirect("/")
+    def is_accessible(self):
+        return is_accessible_bar()
+
+    def inaccessible_callback(self, name, **kwargs):
+        return redirect("/")
+
+
 class BarBaseModelView(BaseModelView):
     can_edit = False
+
+
 class BarCommandeChocolat(BarBaseModelView):
-    
-    column_list = (commandeChocolat.commande_id, commandeChocolat.chocolat_id, commandeChocolat.user_id, commandeChocolat.date_commande, commandeChocolat.servit, commandeChocolat.date_servit, commandeChocolat.nom, commandeChocolat.prenom)
+
+    column_list = (
+        commandeChocolat.commande_id,
+        commandeChocolat.chocolat_id,
+        commandeChocolat.user_id,
+        commandeChocolat.date_commande,
+        commandeChocolat.servit,
+        commandeChocolat.date_servit,
+        commandeChocolat.nom,
+        commandeChocolat.prenom)
     can_create = False
 
+
 admin = Admin(app, index_view=myBaseView())
-admin_bar = Admin(app, index_view = barBaseView(endpoint="bar", url='/bar'))
-admin_bar.add_view(BarCommandeChocolat(commandeChocolat, db_session, endpoint="barCommande"))
+admin_bar = Admin(app, index_view=barBaseView(endpoint="bar", url='/bar'))
+admin_bar.add_view(
+    BarCommandeChocolat(
+        commandeChocolat,
+        db_session,
+        endpoint="barCommande"))
 admin.add_view(BaseModelView(User, db_session))
 admin.add_view(BaseModelView(Code, db_session))
 admin.add_view(BaseModelView(Chocolat, db_session))
@@ -125,14 +167,16 @@ google = oauth.register(
     authorize_url="https://accounts.google.com/o/oauth2/auth",
     authorize_params=None,
     api_base_url="https://www.googleapis.com/oauth2/v1/certs",
-    userinfo_endpoint='https://openidconnect.googleapis.com/v1/userinfo', 
+    userinfo_endpoint='https://openidconnect.googleapis.com/v1/userinfo',
     client_kwargs={'scope': 'openid email profile'},
-     jwks_uri = "https://www.googleapis.com/oauth2/v3/certs",
+    jwks_uri="https://www.googleapis.com/oauth2/v3/certs",
 )
+
 
 @app.route('/')
 def hello_world():
     return "yo yo yooo"
+
 
 @app.route('/login')
 def login():
@@ -140,9 +184,6 @@ def login():
     redirect_uri = url_for('authorize', _external=True)
     return google.authorize_redirect(redirect_uri)
 
-
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
 
 limiter = Limiter(
     app,
@@ -154,76 +195,78 @@ limiter = Limiter(
 @app.route('/code/<codeValue>')
 @limiter.limit("20 per minute")
 @login_required
-def code(codeValue):    
+def code(codeValue):
     c = Code()
     q = db_session.query(Code).filter_by(value=codeValue)
     if(q.count() == 0):
         return redirect('/')
     c = q[0]
-    s_user_id =session["user"]["openid"]
-    q1 = db_session.query(has_scanned).filter_by(user_id=s_user_id).filter_by(code_id=c.id)
+    s_user_id = session["user"]["openid"]
+    q1 = db_session.query(has_scanned).filter_by(
+        user_id=s_user_id).filter_by(code_id=c.id)
     if q1.count() == 0:
         hs = has_scanned()
         hs.user_id = s_user_id
         hs.code_id = c.id
         hs.date = datetime.now()
-        
-        u = db_session.query(User).filter_by(openid=session["user"]["openid"]).first()
+
+        u = db_session.query(User).filter_by(
+            openid=session["user"]["openid"]).first()
         if(u is not None):
-            
+
             value = c.points
-            
-            qte_scan = db_session.query(has_scanned).filter_by(code_id=codeValue).count()
-            
+
+            qte_scan = db_session.query(has_scanned).filter_by(
+                code_id=codeValue).count()
+
             if(qte_scan > 50):
-                value = value*1/4
+                value = value * 1 / 4
             elif(qte_scan > 30):
-                value = value*1/2
+                value = value * 1 / 2
             elif(qte_scan > 15):
-                value = value * 3/4
-            
+                value = value * 3 / 4
+
             value = math.floor(value)
             u.total_points += value
             u.points += value
-        
+
         db_session.add(hs)
         db_session.commit()
     return redirect('/')
-    
 
-@app.route('/myCommande') 
+
+@app.route('/myCommande')
 @login_required
 def myCommande():
-    s_user_id =session["user"]["openid"]
+    s_user_id = session["user"]["openid"]
     l = []
     c = db_session.query(commandeChocolat).filter_by(user_id=s_user_id)
     for cc in c:
         l.append(c)
-    return redirect("/") #TODO : faire une liste des commandes
-        
-    
-@app.route('/commande/<int:choo>/<int:qte>') 
+    return redirect("/")  # TODO : faire une liste des commandes
+
+
+@app.route('/commande/<int:choo>/<int:qte>')
 @login_required
 def newCommande(choo, qte):
     if(qte < 0):
         return redirect("/")
-    
-    s_user_id =session["user"]["openid"]
-    c = db_session.query(Chocolat).filter_by(chocolat_id=choo).first()    
+
+    s_user_id = session["user"]["openid"]
+    c = db_session.query(Chocolat).filter_by(chocolat_id=choo).first()
     if c is None:
-        return redirect("/") #Todo : rediriger vers un écran de confirmation
+        return redirect("/")  # Todo : rediriger vers un écran de confirmation
     if(c.chocolat_stoque < qte):
-        return redirect("/") #Todo : rediriger vers un écran de confirmation
-        
+        return redirect("/")  # Todo : rediriger vers un écran de confirmation
+
     u = db_session.query(User).filter_by(openid=s_user_id).first()
-    
+
     if(qte < c.min_qte):
         return redirect("/")
-    
+
     if(u.points < c.chocolat_price * qte):
         return redirect("/")
-    
-    
+
     cc = commandeChocolat()
     cc.chocolat_id = choo
     cc.user_id = s_user_id
@@ -235,7 +278,7 @@ def newCommande(choo, qte):
     c.chocolat_stoque -= qte
     db_session.add(cc)
     db_session.commit()
-    
+
     return redirect("/")
 
 
@@ -245,8 +288,8 @@ def authorize():
     token = google.authorize_access_token()
     resp = google.get('userinfo', token=token)
     user_info = resp.json()
-    user = oauth.google.userinfo(token=token) 
-    q = db_session.query(User).filter_by(openid = user_info['id'])
+    user = oauth.google.userinfo(token=token)
+    q = db_session.query(User).filter_by(openid=user_info['id'])
     if(q.count() > 0):
         u = q[0]
     else:
@@ -266,7 +309,9 @@ def authorize():
         db_session.add(u)
         db_session.commit()
     session['user'] = u.to_dict()
-    session.permanent = True  # make the session permanant so it keeps existing after broweser gets closed
+    # make the session permanant so it keeps existing after broweser gets
+    # closed
+    session.permanent = True
     if("url" in session):
         url = session["url"]
         del session["url"]
@@ -274,11 +319,11 @@ def authorize():
     return redirect('/')
 
 
-
 @app.route('/validerCommande/<int:commandeId>')
 @bar_required
 def validerCommande(commandeId):
-    c = db_session.query(commandeChocolat).filter_by(commande_id=commandeId).first()
+    c = db_session.query(commandeChocolat).filter_by(
+        commande_id=commandeId).first()
     if(c is None):
         return redirect('/')
     else:
@@ -287,8 +332,8 @@ def validerCommande(commandeId):
             c.servit = True
             db_session.commit()
         return redirect('/')
-    
-    
+
+
 @app.route('/logout')
 def logout():
     for key in list(session.keys()):
@@ -318,82 +363,75 @@ def commandes():
         d["utilisateur"] = ut
         l.append(d)
     return json.dumps(l)
-    
-        
 
 
 @app.route('/qrCodes')
 @admin_required
 def getGRCode():
     codes = db_session.query(Code)
-    
+
     isExist = os.path.exists("out")
     if not isExist:
         os.makedirs("out")
-    
+
     for code in codes:
         make_qr_code(code.value)
-        
-    
-    zipObj = ZipFile('sampleDir.zip', 'w') 
-    
+
+    zipObj = ZipFile('sampleDir.zip', 'w')
+
     mypath = "out"
     onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]
-    
+
     for f in onlyfiles:
         zipObj.write("out//" + f)
-    
+
     zipObj.close()
-    
+
     return send_file("sampleDir.zip", as_attachment=True)
 
 
-
 compteur_qr = 0
+
 
 def make_qr_code(data):
     logo_display = Image.open('cul.png')
     data = url + "/" + data
     bg = Image.open('background.jpg')
-    bg = bg.crop((0,0,900,900))
-    
+    bg = bg.crop((0, 0, 900, 900))
+
     logo_display.thumbnail((60, 60))
-    
+
     qr = qrcode.QRCode(
         error_correction=qrcode.ERROR_CORRECT_H,
-        border=0 ,
+        border=0,
         box_size=16
     )
     qr.add_data(data)
     qr.make(fit=True)
-    
+
     img = qr.make_image(fill_color="black", back_color="white").convert('RGB')
-    
-    logo_pos = ((img.size[0] - logo_display.size[0]) // 2, (img.size[1] - logo_display.size[1]) // 2)
-    
-    
+
+    logo_pos = ((img.size[0] - logo_display.size[0]) // 2,
+                (img.size[1] - logo_display.size[1]) // 2)
+
     img.paste(logo_display, logo_pos)
-    logo_pos = ((bg.size[0] - img.size[0]) // 2, ((bg.size[1] - img.size[1]) // 2) - 50)
-    bg.paste(img,logo_pos)
-    
-    
-    
-    box_shape = ((112,760), (786,862) )
-    
-    bgdraw = ImageDraw.Draw(bg)  
-    bgdraw.rectangle(box_shape, fill ="#FFFFFF", outline ="#000000")
-    
+    logo_pos = ((bg.size[0] - img.size[0]) // 2,
+                ((bg.size[1] - img.size[1]) // 2) - 50)
+    bg.paste(img, logo_pos)
+
+    box_shape = ((112, 760), (786, 862))
+
+    bgdraw = ImageDraw.Draw(bg)
+    bgdraw.rectangle(box_shape, fill="#FFFFFF", outline="#000000")
+
     fnt = ImageFont.truetype("arial.ttf", 26)
-    
+
     w, h = bgdraw.textsize(data, fnt)
-    
+
     W, H = bg.size
-    
-     
-    
-    bgdraw.text(((W-w)/2,790), data, font=fnt, fill=(0, 0, 0, 255))
+
+    bgdraw.text(((W - w) / 2, 790), data, font=fnt, fill=(0, 0, 0, 255))
     global compteur_qr
-    compteur_qr +=1
-    
+    compteur_qr += 1
+
     bg.save("out/" + str(compteur_qr) + ".png")
-    
