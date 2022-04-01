@@ -13,6 +13,27 @@ from flask_admin import BaseView, expose, AdminIndexView
 from flask_admin.form import SecureForm
 from flask_admin.contrib.sqla import ModelView
 import json
+import qrcode
+from PIL import Image, ImageDraw, ImageFont
+import math
+import cv2
+from zipfile import ZipFile
+import os
+from os.path import basename
+from flask import send_file
+
+from os import listdir
+from os.path import isfile, join
+
+#folders setup
+
+mypath = "dbdir"
+isExist = os.path.exists(mypath)
+if not isExist:
+        os.makedirs(mypath)
+
+
+
 # dotenv setup
 
 from dotenv import load_dotenv
@@ -110,10 +131,8 @@ google = oauth.register(
 )
 
 @app.route('/')
-@login_required
 def hello_world():
-    email = dict(session)['user']['email']
-    return f'Hello, you are logge in as {email}!'
+    return "yo yo yooo"
 
 @app.route('/login')
 def login():
@@ -133,7 +152,7 @@ limiter = Limiter(
 
 
 @app.route('/code/<codeValue>')
-@limiter.limit("5 per minute")
+@limiter.limit("20 per minute")
 @login_required
 def code(codeValue):
     c = Code()
@@ -148,6 +167,12 @@ def code(codeValue):
         hs.user_id = s_user_id
         hs.code_id = c.id
         hs.date = datetime.now()
+        
+        u = db_session.query(User).filter_by(openid=session["user"]["openid"]).first()
+        if(u is not None):
+            u.total_points += 1
+            u.points += 1
+        
         db_session.add(hs)
         db_session.commit()
     return redirect('/')
@@ -181,6 +206,7 @@ def newCommande(choo):
     cc.servit = False
     cc.date_servit = None
     u.points -= c.chocolat_price
+    c.chocolat_stoque -= 1
     db_session.add(cc)
     db_session.commit()
     
@@ -207,6 +233,7 @@ def authorize():
         u.admin = 0
         u.bar = 0
         u.points = 0
+        u.total_points = 0
         if(u.openid == "107461719254711187198"):
             u.admin = 1
             u.bar = 1
@@ -214,7 +241,10 @@ def authorize():
         db_session.commit()
     session['user'] = u.to_dict()
     session.permanent = True  # make the session permanant so it keeps existing after broweser gets closed
-    
+    if("url" in session):
+        url = session["url"]
+        del session["url"]
+        return redirect(url)
     return redirect('/')
 
 
@@ -240,6 +270,7 @@ def logout():
 
 
 @app.route('/commandes')
+@limiter.exempt
 @bar_required
 def commandes():
     l = []
@@ -261,24 +292,16 @@ def commandes():
     return json.dumps(l)
     
         
-import qrcode
-from PIL import Image, ImageDraw, ImageFont
-import math
-import cv2
-from zipfile import ZipFile
-import os
-from os.path import basename
-from flask import send_file
 
-from os import listdir
-from os.path import isfile, join
 
 @app.route('/qrCodes')
 @admin_required
 def getGRCode():
-           
-    
     codes = db_session.query(Code)
+    
+    isExist = os.path.exists("out")
+    if not isExist:
+        os.makedirs("out")
     
     for code in codes:
         make_qr_code(code.value)

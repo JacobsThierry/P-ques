@@ -1,6 +1,6 @@
 from flask import session, redirect
 from functools import wraps
-
+from flask import request
 
 def login_required(f):
     @wraps(f)
@@ -10,8 +10,11 @@ def login_required(f):
         # You would add a check here and usethe user id or something to fetch
         # the other data for that user/check if they exist
         if user:
+            if("url" in session):
+                del session["url"]
             return f(*args, **kwargs)
-        return 'You aint logged in, no page for u!'
+        session["url"] = request.url
+        return redirect("/login")
     return decorated_function
 
 
