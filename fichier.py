@@ -7,12 +7,33 @@ from datetime import timedelta
 from datetime import date
 from datetime import datetime
 # decorator for routes that should be accessible only by logged in users
-from auth_decorator import login_required, bar_required
+from auth_decorator import login_required, bar_required, admin_required
 from flask_admin import Admin
 from flask_admin import BaseView, expose, AdminIndexView
 from flask_admin.form import SecureForm
 from flask_admin.contrib.sqla import ModelView
 import json
+import qrcode
+from PIL import Image, ImageDraw, ImageFont
+import math
+import cv2
+from zipfile import ZipFile
+import os
+from os.path import basename
+from flask import send_file
+
+from os import listdir
+from os.path import isfile, join
+
+#folders setup
+
+mypath = "dbdir"
+isExist = os.path.exists(mypath)
+if not isExist:
+        os.makedirs(mypath)
+
+
+
 # dotenv setup
 
 from dotenv import load_dotenv
@@ -21,6 +42,8 @@ load_dotenv()
 
 # App config
 app = Flask(__name__)
+
+url = "paques2022.telecomnancy.net"
 
 # Session config
 app.secret_key = os.getenv("APP_SECRET_KEY")
@@ -61,6 +84,7 @@ class myBaseView(AdminIndexView):
 
 class BaseModelView(ModelView):
     column_display_pk = True
+    page_size = 500
     def is_accessible(self):
         return is_accessible_admin()
 
@@ -107,10 +131,8 @@ google = oauth.register(
 )
 
 @app.route('/')
-@login_required
 def hello_world():
-    email = dict(session)['user']['email']
-    return f'Hello, you are logge in as {email}!'
+    return "yo yo yooo"
 
 @app.route('/login')
 def login():
@@ -118,13 +140,26 @@ def login():
     redirect_uri = url_for('authorize', _external=True)
     return google.authorize_redirect(redirect_uri)
 
+
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+
+limiter = Limiter(
+    app,
+    key_func=get_remote_address,
+    default_limits=["4000 per day", "300 per hour"]
+)
+
+
 @app.route('/code/<codeValue>')
+@limiter.limit("20 per minute")
 @login_required
 def code(codeValue):
-    c = db_session.query(Code).filter_by(value=codeValue).first()
-    if not c:
+    c = Code()
+    q = db_session.query(Code).filter_by(value=codeValue)
+    if(q.count() == 0):
         return redirect('/')
-    
+    c = q[0]
     s_user_id =session["user"]["openid"]
     q1 = db_session.query(has_scanned).filter_by(user_id=s_user_id).filter_by(code_id=c.id)
     if q1.count() == 0:
@@ -132,14 +167,26 @@ def code(codeValue):
         hs.user_id = s_user_id
         hs.code_id = c.id
         hs.date = datetime.now()
+        
+        u = db_session.query(User).filter_by(openid=session["user"]["openid"]).first()
+        if(u is not None):
+            
+            value = c.points
+            
+            qte_scan = db_session.query(has_scanned).filter_by(code_id=codeValue).count()
+            
+            if(qte_scan > 50):
+                value = value*1/4
+            elif(qte_scan > 30):
+                value = value*1/2
+            elif(qte_scan > 15):
+                value = value * 3/4
+            
+            value = math.floor(value)
+            u.total_points += value
+            u.points += value
+        
         db_session.add(hs)
-        
-        u = db_session.query(User).filter_by(openid=s_user_id).first()
-        u.points += c.points
-        
-        print(u.points)
-        print(c.value)
-        
         db_session.commit()
     return redirect('/')
     
@@ -155,23 +202,39 @@ def myCommande():
     return redirect("/") #TODO : faire une liste des commandes
         
     
-@app.route('/commande/<int:choo>') 
+@app.route('/commande/<int:choo>/<int:qte>') 
 @login_required
-def newCommande(choo):
+def newCommande(choo, qte):
+    
+    
+    if(qte < 0):
+        return redirect("/")
+    
     s_user_id =session["user"]["openid"]
     c = db_session.query(Chocolat).filter_by(chocolat_id=choo).first()    
     if c is None:
         return redirect("/") #Todo : rediriger vers un écran de confirmation
+    if(c.chocolat_stoque < qte):
+        return redirect("/") #Todo : rediriger vers un écran de confirmation
+        
     u = db_session.query(User).filter_by(openid=s_user_id).first()
-    if(u.points < c.chocolat_price):
+    
+    if(qte < c.min_qte):
         return redirect("/")
+    
+    if(u.points < c.chocolat_price * qte):
+        return redirect("/")
+    
+    
     cc = commandeChocolat()
     cc.chocolat_id = choo
     cc.user_id = s_user_id
     cc.date_commande = datetime.now()
     cc.servit = False
     cc.date_servit = None
-    u.points -= c.chocolat_price
+    cc.quantite = qte
+    u.points -= c.chocolat_price * qte
+    c.chocolat_stoque -= qte
     db_session.add(cc)
     db_session.commit()
     
@@ -198,6 +261,7 @@ def authorize():
         u.admin = 0
         u.bar = 0
         u.points = 0
+        u.total_points = 0
         if(u.openid == "107461719254711187198"):
             u.admin = 1
             u.bar = 1
@@ -205,8 +269,12 @@ def authorize():
         db_session.commit()
     session['user'] = u.to_dict()
     session.permanent = True  # make the session permanant so it keeps existing after broweser gets closed
-    
+    if("url" in session):
+        url = session["url"]
+        del session["url"]
+        return redirect(url)
     return redirect('/')
+
 
 
 @app.route('/validerCommande/<int:commandeId>')
@@ -231,6 +299,7 @@ def logout():
 
 
 @app.route('/commandes')
+@limiter.exempt
 @bar_required
 def commandes():
     l = []
@@ -239,6 +308,7 @@ def commandes():
         d = {}
         d["id_commande"] = cc.commande_id
         d["date_commande"] = str(cc.date_commande)
+        d["quantité"] = cc.quantite
         choc = {}
         choc["id"] = cc.chocolat_id
         choc["name"] = cc.chocolat
@@ -252,3 +322,83 @@ def commandes():
     return json.dumps(l)
     
         
+
+
+@app.route('/qrCodes')
+@admin_required
+def getGRCode():
+    codes = db_session.query(Code)
+    
+    isExist = os.path.exists("out")
+    if not isExist:
+        os.makedirs("out")
+    
+    for code in codes:
+        make_qr_code(code.value)
+        
+    
+    zipObj = ZipFile('sampleDir.zip', 'w') 
+    
+    mypath = "out"
+    onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]
+    
+    for f in onlyfiles:
+        zipObj.write("out//" + f)
+    
+    zipObj.close()
+    
+    return send_file("sampleDir.zip", as_attachment=True)
+
+
+
+compteur_qr = 0
+
+def make_qr_code(data):
+    logo_display = Image.open('cul.png')
+    
+    data = url + "/" + data
+    
+    bg = Image.open('background.jpg')
+    bg = bg.crop((0,0,900,900))
+    
+    
+    logo_display.thumbnail((60, 60))
+    
+    qr = qrcode.QRCode(
+        error_correction=qrcode.ERROR_CORRECT_H,
+        border=0 ,
+        box_size=16
+    )
+    qr.add_data(data)
+    qr.make(fit=True)
+    
+    img = qr.make_image(fill_color="black", back_color="white").convert('RGB')
+    
+    logo_pos = ((img.size[0] - logo_display.size[0]) // 2, (img.size[1] - logo_display.size[1]) // 2)
+    
+    
+    img.paste(logo_display, logo_pos)
+    logo_pos = ((bg.size[0] - img.size[0]) // 2, ((bg.size[1] - img.size[1]) // 2) - 50)
+    bg.paste(img,logo_pos)
+    
+    
+    
+    box_shape = ((112,760), (786,862) )
+    
+    bgdraw = ImageDraw.Draw(bg)  
+    bgdraw.rectangle(box_shape, fill ="#FFFFFF", outline ="#000000")
+    
+    fnt = ImageFont.truetype("arial.ttf", 26)
+    
+    w, h = bgdraw.textsize(data, fnt)
+    
+    W, H = bg.size
+    
+     
+    
+    bgdraw.text(((W-w)/2,790), data, font=fnt, fill=(0, 0, 0, 255))
+    global compteur_qr
+    compteur_qr +=1
+    
+    bg.save("out/" + str(compteur_qr) + ".png")
+    

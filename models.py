@@ -6,6 +6,7 @@ from database import Base, db
 from flask_admin.model import BaseModelView
 from sqlalchemy.ext.hybrid import hybrid_property, hybrid_method
 
+
 class User(Base, AllFeaturesMixin):
     __tablename__ = 'users'
     openid = db.Column(db.String(255), primary_key=True)
@@ -13,7 +14,8 @@ class User(Base, AllFeaturesMixin):
     picture = db.Column(db.String(255))
     nom = db.Column(db.String(255))
     prenom = db.Column(db.String(255))
-    points = db.Column(db.Float)
+    points = db.Column(db.Integer)
+    total_points = db.Column(db.Integer)
     admin = db.Column(db.Boolean())
     bar = db.Column(db.Boolean())
     serialize_only = ('openid', 'email', 'picture', 'nom', 'prenom', 'admin', 'bar')
@@ -45,8 +47,11 @@ class Chocolat(Base, AllFeaturesMixin):
     __tablename__ = "chocolat"
     chocolat_id = db.Column(db.Integer, primary_key = True)
     chocolat_name = db.Column(db.String(255))
-    chocolat_desc  = db.Column(db.String(1024))
+    chocolat_nom_bar = db.Column(db.String(255))
     chocolat_price = db.Column(db.Integer)
+    chocolat_stoque = db.Column(db.Integer)
+    min_qte = db.Column(db.Integer)
+    chocolat_image = db.Column(db.String(255))
     
 
 class commandeChocolat(Base, AllFeaturesMixin):
@@ -56,6 +61,7 @@ class commandeChocolat(Base, AllFeaturesMixin):
     user_id = db.Column(db.String(255), db.ForeignKey('users.openid'))
     date_commande = db.Column(db.DateTime(timezone=True))
     servit = db.Column(db.Boolean())
+    quantite = db.Column(db.Integer)
     date_servit = db.Column(db.DateTime(timezone=True))
     
     @hybrid_property
@@ -70,7 +76,7 @@ class commandeChocolat(Base, AllFeaturesMixin):
     def chocolat(self):
         u = db.session.query(Chocolat).filter_by(chocolat_id=self.chocolat_id).first()
         if u is not None:
-            return u.chocolat_name
+            return u.chocolat_nom_bar
         else:
             return None
     
