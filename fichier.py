@@ -147,7 +147,7 @@ from flask_limiter.util import get_remote_address
 limiter = Limiter(
     app,
     key_func=get_remote_address,
-    default_limits=["2000 per day", "200 per hour"]
+    default_limits=["4000 per day", "300 per hour"]
 )
 
 
@@ -205,11 +205,16 @@ def myCommande():
 @app.route('/commande/<int:choo>/<int:qte>') 
 @login_required
 def newCommande(choo, qte):
+    
+    
+    if(qte < 0):
+        return redirect("/")
+    
     s_user_id =session["user"]["openid"]
     c = db_session.query(Chocolat).filter_by(chocolat_id=choo).first()    
     if c is None:
         return redirect("/") #Todo : rediriger vers un écran de confirmation
-    if(c.chocolat_stoque < 1):
+    if(c.chocolat_stoque < qte):
         return redirect("/") #Todo : rediriger vers un écran de confirmation
         
     u = db_session.query(User).filter_by(openid=s_user_id).first()
@@ -219,6 +224,8 @@ def newCommande(choo, qte):
     
     if(u.points < c.chocolat_price * qte):
         return redirect("/")
+    
+    
     cc = commandeChocolat()
     cc.chocolat_id = choo
     cc.user_id = s_user_id
@@ -226,8 +233,8 @@ def newCommande(choo, qte):
     cc.servit = False
     cc.date_servit = None
     cc.quantite = qte
-    u.points -= c.chocolat_price
-    c.chocolat_stoque -= 1
+    u.points -= c.chocolat_price * qte
+    c.chocolat_stoque -= qte
     db_session.add(cc)
     db_session.commit()
     
@@ -267,6 +274,7 @@ def authorize():
         del session["url"]
         return redirect(url)
     return redirect('/')
+
 
 
 @app.route('/validerCommande/<int:commandeId>')
