@@ -45,7 +45,7 @@ $(document).ready(function () {
     } else {
       if ($("#nb_choc_" + this.id).val() > $("#nb_choc_" + this.id).max) {
         alert(
-          "Tu n'as pas asser de points ou il n'y a pas suffisament de stoque"
+          "Tu n'as pas asser de points ou il n'y a pas suffisament de stock"
         );
       } else {
         alert("Tu dois acheter plus de chocolats que la valeur minimale");
