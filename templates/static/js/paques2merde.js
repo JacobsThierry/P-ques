@@ -43,6 +43,12 @@ $(document).ready(function () {
     if (val <= max && val >= min) {
       location.href =
         "/commande/" + this.id + "/" + $("#nb_choc_" + this.id).val();
+    } else {
+      if (val > max) {
+        alert("Tu n'as pas asser de points ou il n'y a plus de stock");
+      } else {
+        alert("Tu dois acheter plus d'oeufs que le minimum");
+      }
     }
   });
 });
