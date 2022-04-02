@@ -250,10 +250,6 @@ def shop():
         d["min"] = chocolat.min_qte
         d["max"] = min(chocolat.chocolat_stoque, math.floor(u.points/chocolat.chocolat_price))
         
-        if(d["max"] < d["min"]):
-            d["max"] = d["min"]
-        if(d["max"] > d["min"]):
-            d["min"]= d["max"]
         
         d["prix"] = chocolat.chocolat_price
         d["desc"] = chocolat.chocolat_desc
