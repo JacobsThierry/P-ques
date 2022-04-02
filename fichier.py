@@ -214,6 +214,7 @@ google = oauth.register(
 )
 
 @app.route('/shop')
+@login_required
 def shop():
     
     l = []
