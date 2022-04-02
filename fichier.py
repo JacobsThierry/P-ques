@@ -289,7 +289,7 @@ def hello_world():
 @app.route('/login')
 def login():
     google = oauth.create_client('google')  # create the google oauth client
-    scheme = 'https' if request.is_secure else 'http'
+    scheme = 'https' if app.config.get('PREFERRED_URL_SCHEME', '') == 'https' else 'http'
     redirect_uri = url_for('authorize', _scheme=scheme, _external=True)
     return google.authorize_redirect(redirect_uri)
 
