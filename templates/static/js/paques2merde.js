@@ -36,20 +36,13 @@ $(document).ready(function () {
   });
 
   $(".button").on("click", function () {
-    if (
-      $("#nb_choc_" + this.id).val() <= $("#nb_choc_" + this.id).max &&
-      $("#nb_choc_" + this.id).val() >= $("#nb_choc_" + this.id).min
-    ) {
+    max = parseInt($("#nb_choc_" + this.id).attr("max"));
+    min = parseInt($("#nb_choc_" + this.id).attr("min"));
+    val = parseInt($("#nb_choc_" + this.id).val());
+
+    if (val <= max && val >= min) {
       location.href =
         "/commande/" + this.id + "/" + $("#nb_choc_" + this.id).val();
-    } else {
-      if ($("#nb_choc_" + this.id).val() > $("#nb_choc_" + this.id).max) {
-        alert(
-          "Tu n'as pas asser de points ou il n'y a pas suffisament de stock"
-        );
-      } else {
-        alert("Tu dois acheter plus de chocolats que la valeur minimale");
-      }
     }
   });
 });
