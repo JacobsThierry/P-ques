@@ -3,7 +3,7 @@
 from flask_limiter.util import get_remote_address
 from flask_limiter import Limiter
 
-from flask import Flask, redirect, url_for, session
+from flask import Flask, redirect, url_for, session, render_template
 from authlib.integrations.flask_client import OAuth
 import os
 from datetime import timedelta
@@ -25,6 +25,8 @@ import os
 from os.path import basename
 from flask import send_file
 
+
+from werkzeug.utils import secure_filename
 from os import listdir
 from os.path import isfile, join
 
@@ -42,7 +44,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # App config
-app = Flask(__name__)
+app = Flask(__name__, static_folder='templates/static')
 
 url = "paques2022.telecomnancy.net"
 
@@ -120,6 +122,7 @@ class commandeChocolatModel(BaseModelView):
 
 
 class barBaseView(AdminIndexView):
+    can_delete = False
     def is_accessible(self):
         return is_accessible_bar()
 
@@ -130,19 +133,57 @@ class barBaseView(AdminIndexView):
 class BarBaseModelView(BaseModelView):
     can_edit = False
 
+from markupsafe import Markup
 
 class BarCommandeChocolat(BarBaseModelView):
-
+    can_create = False
+    def _format_button_valider(view, context, model, name):
+        checkout_url = "/validerCommande/"
+        if(model.servit):
+            _html = "👌"
+        else:
+            _html = '''
+                <form action="{checkout_url}{commande_id}">
+                    <input id="id" name="yes"  type="hidden" value="{checkout_url}">
+                    <button type='submit'>Checkout</button>
+                </form
+            '''.format(checkout_url=checkout_url, commande_id=model.commande_id)
+        
+        return Markup(_html)
+    
+    
+    
+    def _format_image(view, context, model, name):
+        checkout_url = "/validerCommande/"
+        _html = '''
+            <img style="width: 250px"
+            src="/uploads/{src}"
+            >
+        '''.format(src=model.image)
+        
+        return Markup(_html)
+    
+    
+    column_formatters = {
+        'Valider commande': _format_button_valider,
+        'image' : _format_image
+    }
+    
+    
     column_list = (
         commandeChocolat.commande_id,
-        commandeChocolat.chocolat_id,
-        commandeChocolat.user_id,
+        commandeChocolat.chocolat,
+        commandeChocolat.quantite,
         commandeChocolat.date_commande,
-        commandeChocolat.servit,
         commandeChocolat.date_servit,
         commandeChocolat.nom,
-        commandeChocolat.prenom)
-    can_create = False
+        commandeChocolat.prenom,
+        "image",
+        commandeChocolat.servit,
+        "Valider commande",
+        )
+    
+    
 
 
 admin = Admin(app, index_view=myBaseView())
@@ -172,10 +213,79 @@ google = oauth.register(
     jwks_uri="https://www.googleapis.com/oauth2/v3/certs",
 )
 
+@app.route('/shop')
+def shop():
+    
+    l = []
+    
+    u = db_session.query(User).filter_by(openid=session["user"]["openid"]).first()
+    
+    if not u:
+        return redirect("/")
+    
+    chocolats = db_session.query(Chocolat)
+    
+    
+    
+    for chocolat in chocolats:
+        d = {}
+        d["argent"] = u.points
+        
+        
+        
+        d["name"] = chocolat.chocolat_name
+        d["image"] = "img/" + chocolat.chocolat_image
+        d["id"] = chocolat.chocolat_id
+        
+        coms = db_session.query(commandeChocolat).filter_by(user_id = u.openid).filter_by(servit=0).filter_by(chocolat_id=chocolat.chocolat_id)
+        abc = 0
+        
+        for com in coms:
+            abc += com.quantite
+        
+        d["count"] = abc
+        
+        d["min"] = chocolat.min_qte
+        d["max"] = min(chocolat.chocolat_stoque, math.floor(u.points/chocolat.chocolat_price))
+        
+        if(d["max"] < d["min"]):
+            d["max"] = d["min"]
+        if(d["max"] > d["min"]):
+            d["min"]= d["max"]
+        
+        d["prix"] = chocolat.chocolat_price
+        d["desc"] = chocolat.chocolat_desc
+        d["modal"] = "Minimum " + str(d["min"]) + " et maximum " + str(d["max"]) + " par achat"
+        
+        
+        
+        l.append(d)
+    
+    return render_template("shop.html", items=l)
+
+
+@app.route("/leSecretDePaqueTropRigoloEtTropBienCachéAhAh")
+def video():
+    return render_template("videos.html")
+
 
 @app.route('/')
 def hello_world():
-    return "yo yo yooo"
+    
+    if  'user' in session:
+        u = db_session.query(User).filter_by(openid=session['user']['openid']).first()
+        nb_points = u.points
+        nb_qr = db_session.query(has_scanned).filter_by(user_id=u.openid).count()
+        b1 = "9" * (len(str(nb_points)))
+        b2 = "9" *(len(str(nb_qr)))
+        
+        
+        result = {"qrcode":nb_qr, "points":nb_points, "b1":b1, "b2":b2}
+        print(result)
+        return render_template("accueil.html", elt=result)
+    else:
+        return render_template("paques.html")
+    
 
 
 @app.route('/login')
@@ -213,9 +323,7 @@ def code(codeValue):
         u = db_session.query(User).filter_by(
             openid=session["user"]["openid"]).first()
         if(u is not None):
-
             value = c.points
-
             qte_scan = db_session.query(has_scanned).filter_by(
                 code_id=codeValue).count()
 
@@ -229,9 +337,14 @@ def code(codeValue):
             value = math.floor(value)
             u.total_points += value
             u.points += value
-
-        db_session.add(hs)
-        db_session.commit()
+            db_session.add(hs)
+            db_session.commit()
+            
+            d = {"points":value}
+            
+            
+            return render_template("scan.html", elt=d)
+        
     return redirect('/')
 
 
@@ -279,7 +392,7 @@ def newCommande(choo, qte):
     db_session.add(cc)
     db_session.commit()
 
-    return redirect("/")
+    return render_template("valid_achat.html")
 
 
 @app.route('/authorize')
@@ -331,7 +444,7 @@ def validerCommande(commandeId):
             c.date_servit = datetime.now()
             c.servit = True
             db_session.commit()
-        return redirect('/')
+        return redirect('/bar/barCommande/')
 
 
 @app.route('/logout')
@@ -435,3 +548,56 @@ def make_qr_code(data):
     compteur_qr += 1
 
     bg.save("out/" + str(compteur_qr) + ".png")
+
+
+
+UPLOAD_FOLDER = 'templates/static/img'
+
+ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'gif'])
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+@app.route('/uploads/<filename>')
+@bar_required
+def uploaded_file(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'],
+                               filename)
+
+from flask import request, flash, send_from_directory
+
+@app.route('/upload', methods=['GET', 'POST'])
+@admin_required
+def upload_file():
+    if request.method == 'POST':
+        # check if the post request has the file part
+        if 'file' not in request.files:
+            flash('No file part')
+            return redirect(request.url)
+        file = request.files['file']
+        # if user does not select file, browser also
+        # submit an empty part without filename
+        if file.filename == '':
+            flash('No selected file')
+            return redirect(request.url)
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            return redirect(url_for('uploaded_file',
+                                    filename=filename))
+        return ''
+    else:
+        return '''
+    <!doctype html>
+    <title>Upload new File</title>
+    <h1>Upload new File</h1>
+    <form method=post enctype=multipart/form-data>
+      <input type=file name=file>
+      <input type=submit value=Upload>
+    </form>
+    '''
+                

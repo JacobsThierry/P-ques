@@ -51,7 +51,8 @@ class Chocolat(Base, AllFeaturesMixin):
     chocolat_price = db.Column(db.Integer)
     chocolat_stoque = db.Column(db.Integer)
     min_qte = db.Column(db.Integer)
-    chocolat_image = db.Column(db.String(255))
+    chocolat_image = db.Column(db.String(1024))
+    chocolat_desc = db.Column(db.String(1024))
     
 
 class commandeChocolat(Base, AllFeaturesMixin):
@@ -77,6 +78,14 @@ class commandeChocolat(Base, AllFeaturesMixin):
         u = db.session.query(Chocolat).filter_by(chocolat_id=self.chocolat_id).first()
         if u is not None:
             return u.chocolat_nom_bar
+        else:
+            return None
+    
+    @hybrid_property
+    def image(self):
+        u = db.session.query(Chocolat).filter_by(chocolat_id=self.chocolat_id).first()
+        if u is not None:
+            return u.chocolat_image
         else:
             return None
     

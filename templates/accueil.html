@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+  <title>~ Paques 2022 ~ </title>
+  <script
+    src="https://code.jquery.com/jquery-3.6.0.min.js"
+    integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4="
+    crossorigin="anonymous"
+  ></script>
+  <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/lettering.js/0.6.1/jquery.lettering.min.js"></script> -->
+  <link
+    rel="stylesheet"
+    href="{{url_for('static', filename='css/testcss.css')}}"
+  />
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.0/css/all.min.css"
+  />
+  <script src="{{url_for('static', filename='js/paques2merde.js')}}"></script>
+  <link
+    rel="stylesheet"
+    href="{{url_for('static', filename='css/navbar.css')}}"
+  />
+  <!-- <link rel="stylesheet" href="http://github.hubspot.com/odometer/themes/odometer-theme-car.css" /> -->
+  <script src="http://github.hubspot.com/odometer/odometer.js"></script>
+  <script src="{{url_for('static', filename='js/circleText.js')}}"></script>
+
+  <!-- <script src="{{url_for('static', filename='circleText.js')}}"></script> -->
+  <!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">     -->
+      <div class="navbar navbar-inverse">
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col-lg-12">
+          <div class="navbar-header">
+            <button
+              class="navbar-toggle"
+              data-target="#mobile_menu"
+              data-toggle="collapse"
+            >
+              <span class="icon-bar"></span><span class="icon-bar"></span
+              ><span class="icon-bar"></span>
+            </button>
+          </div>
+
+          <div class="navbar-collapse collapse" id="mobile_menu">
+            <ul class="nav navbar-nav">
+              <li>
+                <a href="/">
+                  <i class="fa-solid fa-egg"></i>
+                  <span>Accueil</span>
+                  <i class="fa-solid fa-egg"></i>
+                </a>
+              </li>
+              <li>
+                <a href="/shop">
+                  <i class="fa-solid fa-egg"></i>
+                  <span>Magasin</span>
+                  <i class="fa-solid fa-egg"></i>
+                </a>
+              </li>
+            </ul>
+
+            <ul class="nav navbar-nav navbar-right">
+
+
+                <li>
+                <a href="/logout">
+                  <i class="fa-solid fa-egg"></i>
+                  <span>Déconnexion</span>
+                  <i class="fa-solid fa-egg"></i>
+                </a>
+              </li>
+
+            
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+
+
+  <div class="main_title" id="joli_titre">~ Bonjour mon lapin ~</div>
+  <div class="main_title" style="text-align:center" >Cherches des QR codes dans l'école pour gagner des points !</div>
+
+  <span id="nb_points" class="{{elt.points}}" hidden></span>
+  <span id="nb_qr" class="{{elt.qrcode}}" hidden></span>
+  <div class="corps">
+    <div class="carte">
+      <h2>Nombre de points gagnés</h2>
+      <div class="odometer {{elt.points}}" id="odometer">{{elt.b1}}</div>
+    </div>
+    <div class="carte">
+      <h2>Nombre de QR-codes flashés</h2>
+      <div class="odometer {{elt.qrcode}}" id="odometer1">{{elt.b2}}</div>
+    </div>
+  </div>
+  <!-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script> -->
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+</html>
