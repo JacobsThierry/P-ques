@@ -251,7 +251,7 @@ def shop():
         
         
         d["prix"] = chocolat.chocolat_price
-        d["desc"] = chocolat.chocolat_descopenc
+        d["desc"] = chocolat.chocolat_desc
         d["modal"] = "Minimum " + str(d["min"]) + " et maximum " + str(d["max"]) + " par achat"
         
         
@@ -268,6 +268,7 @@ def video():
 
 @app.route('/')
 def hello_world():
+    
     
     if  'user' in session:
         u = db_session.query(User).filter_by(openid=session['user']['openid']).first()
