@@ -10,7 +10,7 @@ $(document).ready(function () {
   }, 10000);
   console.log("genius");
   $(".retour").on("click", function () {
-    location.href = "/code/secret_de_paque";
+    location.href = "/secret_de_paque";
   });
   if (window.location.hash == "") {
     var count = $("#nb_points").attr("class");

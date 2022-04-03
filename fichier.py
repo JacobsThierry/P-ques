@@ -269,7 +269,6 @@ def video():
 @app.route('/')
 def hello_world():
     
-    
     if  'user' in session:
         u = db_session.query(User).filter_by(openid=session['user']['openid']).first()
         nb_points = u.points
@@ -301,7 +300,7 @@ limiter = Limiter(
 )
 
 
-@app.route('/code/<codeValue>')
+@app.route('/<codeValue>')
 @limiter.limit("20 per minute")
 @login_required
 def code(codeValue):
