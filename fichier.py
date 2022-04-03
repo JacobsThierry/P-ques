@@ -19,7 +19,6 @@ import json
 import qrcode
 from PIL import Image, ImageDraw, ImageFont
 import math
-import cv2
 from zipfile import ZipFile
 import os
 from os.path import basename
@@ -252,7 +251,7 @@ def shop():
         
         
         d["prix"] = chocolat.chocolat_price
-        d["desc"] = chocolat.chocolat_desc
+        d["desc"] = chocolat.chocolat_descopenc
         d["modal"] = "Minimum " + str(d["min"]) + " et maximum " + str(d["max"]) + " par achat"
         
         
