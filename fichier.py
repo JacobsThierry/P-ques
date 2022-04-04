@@ -272,9 +272,6 @@ def video():
 @app.route('/')
 def hello_world():
     
-    session["user"] = {}
-    session["user"]["openid"] = "107461719254711187198"
-    
     if  'user' in session:
         u = db_session.query(User).filter_by(openid=session['user']['openid']).first()
         nb_points = u.points
