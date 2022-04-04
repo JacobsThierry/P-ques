@@ -334,7 +334,7 @@ def code(codeValue):
         if(u is not None):
             value = c.points
             qte_scan = db_session.query(has_scanned).filter_by(
-                code_id=q.id).count()
+                code_id=c.value).count()
 
             print(qte_scan)
 
