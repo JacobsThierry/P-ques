@@ -140,6 +140,8 @@ from markupsafe import Markup
 class BarCommandeChocolat(BarBaseModelView):
     can_create = False
     can_delete = False
+    def is_accessible(self):
+        return is_accessible_bar()
     def _format_button_valider(view, context, model, name):
         checkout_url = "/validerCommande/"
         if(model.servit):
