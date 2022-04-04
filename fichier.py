@@ -296,13 +296,11 @@ def login():
 limiter = Limiter(
     app,
     key_func=get_remote_address,
-    
-    default_limits=["4000 per day", "600 per hour"]
+    default_limits=["500000 per day", "100000 per hour"]
 )
 
 
 @app.route('/<codeValue>')
-@limiter.limit("30 per minute", key_func=get_remote_address)
 @login_required
 def code(codeValue):
     c = Code()
