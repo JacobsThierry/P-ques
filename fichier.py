@@ -268,7 +268,7 @@ def video():
 
 @app.route('/')
 def hello_world():
-    
+    print(get_remote_address())
     if  'user' in session:
         u = db_session.query(User).filter_by(openid=session['user']['openid']).first()
         nb_points = u.points
@@ -296,12 +296,13 @@ def login():
 limiter = Limiter(
     app,
     key_func=get_remote_address,
-    default_limits=["4000 per day", "300 per hour"]
+    
+    default_limits=["4000 per day", "600 per hour"]
 )
 
 
 @app.route('/<codeValue>')
-@limiter.limit("20 per minute")
+@limiter.limit("30 per minute", key_func=get_remote_address)
 @login_required
 def code(codeValue):
     c = Code()
