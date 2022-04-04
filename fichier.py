@@ -273,7 +273,7 @@ def video():
 def hello_world():
     
     if "user" in session:
-        if(session["user"]["openid"] == "107461719254711187198"):
+        if(session["user"]["openid"] == "107461719254711187198" and "email" not in session["user"] ):
             for key in list(session.keys()):
                 session.pop(key)
                 return redirect('/')
