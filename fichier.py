@@ -81,7 +81,7 @@ def is_accessible_bar():
         u = db_session.query(User).filter_by(
             openid=session["user"]["openid"]).first()
         if(u is not None):
-            return u.openid == "107461719254711187198" or u.admin == 1
+            return u.openid == "107461719254711187198" or u.admin == 1 or u.bar==1
     return False
 
 
