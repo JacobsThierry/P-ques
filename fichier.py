@@ -283,7 +283,7 @@ def hello_world():
         b2 = "9" *(len(str(nb_qr)))
         
         
-        result = {"qrcode":nb_qr, "points":nb_points, "b1":b1, "b2":b2}
+        result = {"qrcode":nb_qr, "points":nb_points, "b1":nb_points, "b2":nb_qr}
         print(result)
         return render_template("accueil.html", elt=result)
     else:
