@@ -77,6 +77,7 @@ def is_accessible_admin():
 
 
 def is_accessible_bar():
+    print("baaaaaaaaaar")
     if("user" in session and session["user"] is not None):
         u = db_session.query(User).filter_by(
             openid=session["user"]["openid"]).first()
@@ -121,7 +122,9 @@ class commandeChocolatModel(BaseModelView):
 
 
 class barBaseView(AdminIndexView):
+    page_size = 500
     can_delete = False
+    can_edit = False
     def is_accessible(self):
         return is_accessible_bar()
 
@@ -268,7 +271,7 @@ def video():
 
 @app.route('/')
 def hello_world():
-    print(get_remote_address())
+    
     if  'user' in session:
         u = db_session.query(User).filter_by(openid=session['user']['openid']).first()
         nb_points = u.points
