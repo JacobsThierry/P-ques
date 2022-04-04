@@ -300,7 +300,7 @@ def hello_world():
 @app.route('/login')
 def login():
     google = oauth.create_client('google')  # create the google oauth client
-    scheme = 'https'
+    scheme = 'http'
     redirect_uri = url_for('authorize', _scheme=scheme, _external=True)
     return google.authorize_redirect(redirect_uri)
 
@@ -334,7 +334,9 @@ def code(codeValue):
         if(u is not None):
             value = c.points
             qte_scan = db_session.query(has_scanned).filter_by(
-                code_id=codeValue).count()
+                code_id=q.id).count()
+
+            print(qte_scan)
 
             if(qte_scan > 50):
                 value = value * 1 / 4
@@ -485,6 +487,14 @@ def commandes():
         d["utilisateur"] = ut
         l.append(d)
     return json.dumps(l)
+
+
+@app.route('/getbdd')
+@admin_required
+def getbdd():
+
+
+    return send_file("dbdir/test.db", as_attachment=True)
 
 
 @app.route('/qrCodes')
