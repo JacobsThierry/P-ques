@@ -300,7 +300,7 @@ def hello_world():
 @app.route('/login')
 def login():
     google = oauth.create_client('google')  # create the google oauth client
-    scheme = 'http'
+    scheme = 'https'
     redirect_uri = url_for('authorize', _scheme=scheme, _external=True)
     return google.authorize_redirect(redirect_uri)
 
