@@ -72,7 +72,7 @@ def is_accessible_admin():
         u = db_session.query(User).filter_by(
             openid=session["user"]["openid"]).first()
         if(u is not None):
-            return u.openid == "107461719254711187198" or u.admin == 1
+            return u.openid == "107461719254711187198" or u.admin
     return False
 
 
@@ -82,7 +82,7 @@ def is_accessible_bar():
         u = db_session.query(User).filter_by(
             openid=session["user"]["openid"]).first()
         if(u is not None):
-            return u.openid == "107461719254711187198" or u.admin == 1 or u.bar==1
+            return u.bar or u.openid == "107461719254711187198" or u.admin
     return False
 
 
@@ -271,6 +271,9 @@ def video():
 
 @app.route('/')
 def hello_world():
+    
+    session["user"] = {}
+    session["user"]["openid"] = "107461719254711187198"
     
     if  'user' in session:
         u = db_session.query(User).filter_by(openid=session['user']['openid']).first()
